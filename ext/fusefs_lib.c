@@ -112,7 +112,7 @@ typedef unsigned long int (*rbfunc)();
  */
 #ifdef DEBUG
 static void
-debug(char *msg,...) {
+debug(const char *msg,...) {
   va_list ap;
   va_start(ap,msg);
   vfprintf(stderr,msg,ap);
@@ -149,7 +149,7 @@ editor_fileP(const char *path) {
 
   if (!handle_editor)
     return 0;
-  
+
   /* Already created one */
   for (ptr = editor_head ; ptr ; ptr = ptr->next) {
     if (strcasecmp(ptr->path,path) == 0) {
@@ -170,7 +170,7 @@ editor_fileP(const char *path) {
     int len;
     if (*ptr != '.') break;
 
-    // ends with .sw? 
+    // ends with .sw?
     ptr = strrchr(ptr,'.');
     len = strlen(ptr);
     // .swp or .swpx
@@ -252,7 +252,7 @@ rf_mcall(const char *path, ID method, char *methname, VALUE arg) {
 
   /* Set up the call and make it. */
   result = rb_protect(rf_protected, methargs, &error);
- 
+
   /* Did it error? */
   if (error) return Qnil;
 
@@ -430,7 +430,7 @@ rf_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
     debug(" yes.\n");
   }
- 
+
   /* These two are Always in a directory */
   filler(buf,".", NULL, 0);
   filler(buf,"..", NULL, 0);
@@ -452,7 +452,7 @@ rf_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     if (TYPE(cur_entry) != T_STRING)
       continue;
 
-    filler(buf,STR2CSTR(cur_entry),NULL,0);
+    filler(buf,StringValuePtr(cur_entry),NULL,0);
   }
   return 0;
 }
@@ -471,7 +471,7 @@ rf_mknod(const char *path, mode_t umode, dev_t rdev) {
 
   debug("rf_mknod(%s)\n", path);
   /* Make sure it's not already open. */
-  
+
   debug("  Checking if it's opened ...");
   if (file_openedP(path)) {
     debug(" yes.\n");
@@ -591,7 +591,7 @@ rf_open(const char *path, struct fuse_file_info *fi) {
     return -EACCES;
   }
   debug(" no.\n");
- 
+
   debug("Checking if an editor file is requested...");
   switch (editor_fileP(path)) {
   case 2:
@@ -928,7 +928,7 @@ rf_rename(const char *path, const char *dest) {
     }
     debug(" yes.\n");
   }
- 
+
   /* Can we create the new one? */
   debug("  Checking if we can write to %s ...", dest);
   if (!RTEST(rf_call(dest,can_write,Qnil))) {
@@ -1021,7 +1021,7 @@ rf_unlink(const char *path) {
     return -EACCES;
   }
   debug(" no.\n");
- 
+
   /* Ok, remove it! */
   debug("  Removing it.\n");
   rf_call(path,id_delete,Qnil);
@@ -1061,7 +1061,7 @@ rf_truncate(const char *path, off_t offset) {
   if (!RTEST(rf_call(path,can_delete,Qnil))) {
     return -EACCES;
   }
- 
+
   /* If offset is 0, then we just overwrite it with an empty file. */
   if (offset > 0) {
     VALUE newstr = rb_str_new2("");
@@ -1105,7 +1105,7 @@ rf_mkdir(const char *path, mode_t mode) {
   /* Can we mkdir it? */
   if (!RTEST(rf_call(path,can_mkdir,Qnil)))
     return -EACCES;
- 
+
   /* Ok, mkdir it! */
   rf_call(path,id_mkdir,Qnil);
   return 0;
@@ -1132,7 +1132,7 @@ rf_rmdir(const char *path) {
   /* Can we rmdir it? */
   if (!RTEST(rf_call(path,can_rmdir,Qnil)))
     return -EACCES;
- 
+
   /* Ok, rmdir it! */
   rf_call(path,id_rmdir,Qnil);
   return 0;
@@ -1152,7 +1152,7 @@ rf_write(const char *path, const char *buf, size_t size, off_t offset,
 
   opened_file *ptr;
 
-  debug( "  Offset is %d\n", offset );
+  debug( "  Offset is %lld\n", offset );
 
   debug("  Checking if file is open... ");
   /* Find the opened file. */
@@ -1178,8 +1178,8 @@ rf_write(const char *path, const char *buf, size_t size, off_t offset,
     /* raw read */
     VALUE args = rb_ary_new();
     debug(" yes.\n");
-    rb_ary_push(args,INT2NUM(offset));
-    rb_ary_push(args,INT2NUM(size));
+    rb_ary_push(args,LONG2NUM(offset));
+    rb_ary_push(args,LONG2NUM(size));
     rb_ary_push(args,rb_str_new(buf,size));
     rf_call(path,id_raw_write,args);
     return size;
@@ -1234,6 +1234,8 @@ rf_read(const char *path, char *buf, size_t size, off_t offset,
   opened_file *ptr;
 
   debug( "rf_read(%s)\n", path );
+  debug( "  Offset is %lld\n", offset );
+
   /* Find the opened file. */
   for (ptr = opened_head;ptr;ptr = ptr->next)
     if (strcmp(ptr->path,path) == 0) break;
@@ -1246,8 +1248,8 @@ rf_read(const char *path, char *buf, size_t size, off_t offset,
   if (ptr->raw) {
     /* raw read */
     VALUE args = rb_ary_new();
-    rb_ary_push(args,INT2NUM(offset));
-    rb_ary_push(args,INT2NUM(size));
+    rb_ary_push(args,LONG2NUM(offset));
+    rb_ary_push(args,LONG2NUM(size));
     VALUE ret = rf_call(path,id_raw_read,args);
     if (!RTEST(ret))
       return 0;
@@ -1274,7 +1276,7 @@ rf_fsyncdir(const char * path, int p, struct fuse_file_info *fi)
   return 0;
 }
 
-static int 
+static int
 rf_utime(const char *path, struct utimbuf *ubuf)
 {
   return 0;
@@ -1380,7 +1382,7 @@ rf_mount_to(int argc, VALUE *argv, VALUE self) {
   opts->argc = argc;
   opts->argv = ALLOC_N(char *, opts->argc);
   opts->allocated = 1;
-  
+
   opts->argv[0] = strdup("-odirect_io");
 
   for (i = 1; i < argc; i++) {
@@ -1390,7 +1392,7 @@ rf_mount_to(int argc, VALUE *argv, VALUE self) {
   }
 
   rb_iv_set(cFuseFS,"@mountpoint",mountpoint);
-  fusefs_setup(STR2CSTR(mountpoint), &rf_oper, opts);
+  fusefs_setup(StringValuePtr(mountpoint), &rf_oper, opts);
   return Qtrue;
 }
 
