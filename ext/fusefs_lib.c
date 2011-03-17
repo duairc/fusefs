@@ -660,7 +660,8 @@ rf_open(const char *path, struct fuse_file_info *fi) {
     /* We have the body, now save it the entire contents to our
      * opened_file lists. */
     newfile = ALLOC(opened_file);
-    value = rb_str2cstr(body,&newfile->size);
+    value = StringValueCStr(body);
+    newfile->size = strlen(value);
     newfile->value = ALLOC_N(char,(newfile->size)+1);
     memcpy(newfile->value,value,newfile->size);
     newfile->value[newfile->size] = '\0';
@@ -715,7 +716,8 @@ rf_open(const char *path, struct fuse_file_info *fi) {
       /* We have the body, now save it the entire contents to our
        * opened_file lists. */
       newfile = ALLOC(opened_file);
-      value = rb_str2cstr(body,&newfile->size);
+      value = StringValueCStr(body);
+      newfile->size = strlen(value);
       newfile->value = ALLOC_N(char,(newfile->size)+1);
       memcpy(newfile->value,value,newfile->size);
       newfile->writesize = newfile->size+1;
@@ -1074,7 +1076,8 @@ rf_truncate(const char *path, off_t offset) {
       rf_call(path,id_write_to,newstr);
     } else {
       long size;
-      char *str = rb_str2cstr(body,&size);
+      char *str = StringValueCStr(body);
+      size = strlen(str);
 
       /* Just in case offset is bigger than the file. */
       if (offset >= size) return 0;
