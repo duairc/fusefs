@@ -27,7 +27,7 @@
 /* init_time
  *
  * All files will have a modified time equal to this. */
-time_t init_time;
+static time_t init_time;
 
 /* opened_file
  *
