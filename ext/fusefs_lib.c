@@ -452,7 +452,7 @@ rf_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     if (TYPE(cur_entry) != T_STRING)
       continue;
 
-    filler(buf,STR2CSTR(cur_entry),NULL,0);
+    filler(buf,StringValuePtr(cur_entry),NULL,0);
   }
   return 0;
 }
@@ -1390,7 +1390,7 @@ rf_mount_to(int argc, VALUE *argv, VALUE self) {
   }
 
   rb_iv_set(cFuseFS,"@mountpoint",mountpoint);
-  fusefs_setup(STR2CSTR(mountpoint), &rf_oper, opts);
+  fusefs_setup(StringValuePtr(mountpoint), &rf_oper, opts);
   return Qtrue;
 }
 
