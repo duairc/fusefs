@@ -29,7 +29,7 @@
 /* init_time
  *
  * All files will have a modified time equal to this. */
-time_t init_time;
+static time_t init_time;
 
 /* opened_file
  *
@@ -587,13 +587,13 @@ rf_open(const char *path, struct fuse_file_info *fi) {
   debug("rf_open(%s)\n", path);
 
   /* Make sure it's not already open. */
-  debug("  Checking if it's already open ...");
-  if (file_openedP(path)) {
-    debug(" yes.\n");
-    return -EACCES;
-  }
-  debug(" no.\n");
- 
+  /* debug("  Checking if it's already open ..."); */
+  /* if (file_openedP(path)) { */
+  /*   debug(" yes.\n"); */
+  /*   return -EACCES; */
+  /* } */
+  /* debug(" no.\n"); */
+
   debug("Checking if an editor file is requested...");
   switch (editor_fileP(path)) {
   case 2:
